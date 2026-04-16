@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英語補習課表系統</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#0f1117;--sur:#181c27;--sur2:#1e2332;--bd:#2a3045;
+  --acc:#4f8ef7;--g:#4fcf8e;--y:#f7c94f;--r:#f76b6b;--p:#a07af7;
+  --tx:#e8ecf4;--t2:#8a94aa;--t3:#5a6275;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;}
+
+/* ── NAV ── */
+.nav{background:var(--sur);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 12px;height:52px;
+  position:sticky;top:0;z-index:100;gap:0;}
+.logo{font-size:15px;font-weight:700;color:var(--acc);margin-right:12px;white-space:nowrap;flex-shrink:0;}
+.tabs{display:flex;gap:2px;flex:1;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--t2);
+  white-space:nowrap;border:none;background:none;font-family:inherit;flex-shrink:0;transition:all .15s;}
+.tab:hover{color:var(--tx);background:var(--sur2);}
+.tab.on{background:var(--acc);color:#fff;font-weight:600;}
+.nav-r{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px;}
+.mctl{display:flex;align-items:center;gap:4px;background:var(--sur2);border:1px solid var(--bd);
+  border-radius:7px;padding:4px 8px;font-size:12px;font-family:'DM Mono',monospace;white-space:nowrap;}
+.mctl button{background:none;border:none;color:var(--t2);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;}
+.mctl button:hover{color:var(--acc);}
+.vbtn{padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--sur2);
+  color:var(--t2);cursor:pointer;font-size:11px;font-family:inherit;}
+.vbtn.on{background:var(--acc);color:#fff;border-color:var(--acc);}
+
+/* ── SYNC BAR ── */
+.sbar{display:flex;align-items:center;gap:8px;padding:5px 12px;
+  background:var(--sur2);border-bottom:1px solid var(--bd);font-size:11px;color:var(--t2);}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;}
+.dot.ok{background:var(--g);}
+.dot.err{background:var(--r);}
+.dot.spin{background:var(--y);animation:bk 1s infinite;}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── PAGES ── */
+.page{display:none;padding:12px;}
+.page.on{display:block;}
+
+/* ── BUTTONS ── */
+.btn{padding:6px 12px;border-radius:7px;border:1px solid var(--bd);
+  background:var(--sur2);color:var(--tx);cursor:pointer;font-size:12px;
+  font-family:inherit;transition:all .15s;white-space:nowrap;}
+.btn:hover{border-color:var(--acc);color:var(--acc);}
+.ba{background:var(--acc);border-color:var(--acc);color:#fff;}
+.ba:hover{opacity:.85;color:#fff;}
+.bg{background:var(--g);border-color:var(--g);color:#0f1117;}
+.bg:hover{opacity:.85;}
+.br{background:var(--r);border-color:var(--r);color:#fff;}
+.br:hover{opacity:.85;}
+.bs{padding:3px 7px;font-size:11px;}
+.bar{display:flex;gap:6px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+
+/* ── MONTH CALENDAR ── */
+.cal{background:var(--sur);border:1px solid var(--bd);border-radius:10px;overflow:hidden;}
+.cal-hd{display:grid;grid-template-columns:repeat(7,1fr);background:var(--sur2);border-bottom:1px solid var(--bd);}
+.cal-dn{text-align:center;padding:8px 2px;font-size:11px;font-weight:600;color:var(--t2);}
+.cal-dn:first-child{color:var(--r);}
+.cal-dn:last-child{color:var(--acc);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.cell{min-height:115px;border-right:1px solid var(--bd);border-bottom:1px solid var(--bd);
+  padding:4px;position:relative;cursor:pointer;}
+.cell:nth-child(7n){border-right:none;}
+.cell:hover{background:rgba(79,142,247,.05);}
+.cell.dim{opacity:.3;pointer-events:none;}
+.cell.td{background:rgba(79,142,247,.08);}
+.cell-d{font-size:11px;font-family:'DM Mono',monospace;color:var(--t3);
+  display:flex;align-items:center;gap:3px;margin-bottom:3px;}
+.cell:nth-child(7n+1) .cell-d{color:var(--r);}
+.td-dot{background:var(--acc);color:#fff;font-size:9px;font-weight:700;
+  border-radius:8px;padding:1px 5px;}
+.pill{display:block;width:100%;border-radius:4px;padding:3px 4px;
+  margin-bottom:2px;border-left:3px solid #4f8ef7;cursor:pointer;}
+.pill:hover{filter:brightness(1.1);}
+.pill-time{font-size:9px;font-family:'DM Mono',monospace;font-weight:700;line-height:1.3;}
+.pill-stu{font-size:11px;font-weight:700;line-height:1.3;}
+.pill-tea{font-size:9px;opacity:.8;line-height:1.3;}
+.more-btn{font-size:10px;color:var(--acc);text-align:center;padding:2px;
+  background:rgba(79,142,247,.1);border-radius:3px;margin-top:1px;cursor:pointer;}
+.add-btn{position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;
+  background:var(--sur2);border:1px solid var(--bd);color:var(--t3);font-size:12px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  opacity:0;transition:opacity .15s;line-height:1;}
+.cell:hover .add-btn{opacity:1;}
+
+/* ── WEEK CALENDAR ── */
+.week{background:var(--sur);border:1px solid var(--bd);border-radius:10px;overflow:hidden;}
+.wk-hd{display:grid;grid-template-columns:52px repeat(7,1fr);background:var(--sur2);border-bottom:1px solid var(--bd);}
+.wk-hc{padding:9px 4px;text-align:center;border-right:1px solid var(--bd);font-size:11px;font-weight:600;min-width:0;}
+.wk-hc:last-child{border-right:none;}
+.wk-hc.td{color:var(--acc);}
+.wk-body{display:flex;flex-direction:column;}
+.wk-row{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid var(--bd);}
+.wk-row:last-child{border-bottom:none;}
+.wk-tc{padding:6px 4px;font-size:10px;font-family:'DM Mono',monospace;color:var(--t3);
+  text-align:right;background:var(--sur2);border-right:1px solid var(--bd);line-height:1.8;}
+.wk-c{border-right:1px solid var(--bd);padding:3px;min-height:64px;cursor:pointer;}
+.wk-c:last-child{border-right:none;}
+.wk-c.td{background:rgba(79,142,247,.04);}
+.wpill{display:block;width:100%;border-radius:5px;padding:4px 6px;
+  margin-bottom:3px;border-left:3px solid #4f8ef7;cursor:pointer;}
+.wpill:hover{filter:brightness(1.1);}
+.wpill-time{font-size:10px;font-family:'DM Mono',monospace;font-weight:700;}
+.wpill-stu{font-size:12px;font-weight:700;margin:1px 0;}
+.wpill-tea{font-size:10px;opacity:.85;margin-bottom:4px;}
+.wpill-acts{display:flex;gap:3px;flex-wrap:wrap;}
+.wact{font-size:10px;font-weight:600;padding:2px 5px;border-radius:4px;
+  border:none;cursor:pointer;font-family:inherit;}
+
+/* ── STATUS ── */
+.sb{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;}
+.sn{background:rgba(79,207,142,.15);color:var(--g);}
+.stl{background:rgba(247,107,107,.15);color:var(--r);}
+.ssl{background:rgba(247,201,79,.15);color:var(--y);}
+.smk{background:rgba(160,122,247,.15);color:var(--p);}
+
+/* ── MODAL ── */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+  align-items:center;justify-content:center;}
+.ov.on{display:flex;}
+.modal{background:var(--sur);border:1px solid var(--bd);border-radius:13px;
+  padding:20px;width:500px;max-width:96vw;max-height:92vh;overflow-y:auto;position:relative;}
+.modal h2{font-size:15px;margin-bottom:14px;}
+.mc{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--t2);font-size:20px;cursor:pointer;}
+.fr{margin-bottom:11px;}
+.fl{display:block;font-size:11px;color:var(--t2);margin-bottom:4px;}
+.fi,.fs,.fta{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--bd);
+  border-radius:7px;color:var(--tx);font-size:13px;font-family:inherit;outline:none;}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--acc);}
+.fta{min-height:65px;resize:vertical;}
+.fs option{background:var(--sur);}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;}
+.chkbox{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:5px;max-height:145px;overflow-y:auto;}
+.chki{display:flex;align-items:center;gap:7px;padding:5px 6px;border-radius:5px;cursor:pointer;}
+.chki:hover{background:var(--sur2);}
+.chki input{width:14px;height:14px;accent-color:var(--acc);cursor:pointer;flex-shrink:0;}
+.hn{font-size:10px;padding:1px 6px;border-radius:8px;}
+.hok{background:rgba(79,207,142,.15);color:var(--g);}
+.hlo{background:rgba(247,107,107,.15);color:var(--r);}
+.hze{background:rgba(90,98,117,.2);color:var(--t3);}
+.prev{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
+.pchip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:10px;}
+
+/* ── CARDS ── */
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:11px;}
+.card{background:var(--sur);border:1px solid var(--bd);border-radius:10px;padding:14px;}
+.av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.hbar{height:5px;background:var(--bd);border-radius:3px;overflow:hidden;margin:5px 0;}
+.hfill{height:100%;background:var(--acc);border-radius:3px;}
+.hfill.lo{background:var(--r);}
+.lge{display:flex;justify-content:space-between;padding:3px 0;
+  border-bottom:1px solid var(--bd);font-size:11px;color:var(--t2);}
+.lge:last-child{border-bottom:none;}
+.stag{display:inline-flex;align-items:center;border-radius:5px;
+  padding:2px 7px;font-size:10px;font-weight:600;margin:2px;border:1px solid transparent;}
+
+/* ── SALARY ── */
+.ptab{padding:5px 12px;border-radius:7px;border:1px solid var(--bd);background:var(--sur2);color:var(--t2);cursor:pointer;font-size:12px;}
+.ptab.on{background:var(--acc);border-color:var(--acc);color:#fff;}
+.sr{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--bd);}
+.sr:last-of-type{border-bottom:none;}
+.stot{font-size:19px;font-weight:700;color:var(--g);margin-top:8px;}
+.bonin{flex:1;padding:5px 9px;background:var(--bg);border:1px solid var(--bd);
+  border-radius:7px;color:var(--y);font-size:13px;font-family:'DM Mono',monospace;outline:none;}
+
+/* ── PARENT ── */
+.pcard{background:#fff;border-radius:13px;padding:20px;max-width:460px;
+  margin:0 auto;color:#1e293b;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.phdr{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding-bottom:13px;border-bottom:2px solid #f1f5f9;}
+.pfr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;}
+.pfr:last-child{border-bottom:none;}
+
+/* ── NOTIFY ── */
+.ntpl{width:100%;min-height:110px;background:var(--bg);border:1px solid var(--acc);
+  border-radius:8px;color:var(--tx);font-size:13px;font-family:inherit;padding:10px;outline:none;resize:vertical;line-height:1.8;}
+.nmsg{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:11px;
+  font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-all;}
+.ncf{animation:cf .5s;}
+@keyframes cf{0%{background:rgba(79,207,142,.2)}100%{background:var(--bg)}}
+
+/* ── SCHED ROW ── */
+.srow{display:flex;gap:4px;align-items:center;background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:5px 7px;}
+
+/* ── SETUP ── */
+.cbox{background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:10px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--g);white-space:pre-wrap;
+  word-break:break-all;max-height:170px;overflow-y:auto;}
+
+/* ── PRINT ── */
+.prov{display:none;position:fixed;inset:0;background:#fff;z-index:999;padding:32px;overflow-y:auto;color:#111;}
+.prov.on{display:block;}
+.prcl{position:fixed;top:12px;right:12px;background:#e53e3e;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;}
+.ptbl{width:100%;border-collapse:collapse;font-size:12px;}
+.ptbl th{background:#f0f4ff;padding:8px;text-align:left;border:1px solid #d0d8e8;}
+.ptbl td{padding:6px 8px;border:1px solid #d0d8e8;}
+
+.empty{text-align:center;padding:40px;color:var(--t3);font-size:13px;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">EduSched</div>
+  <div class="tabs" id="tabs">
+    <button class="tab on"  onclick="go('cal',this)">📅 課表</button>
+    <button class="tab" onclick="go('notify',this)">📣 通知</button>
+    <button class="tab" onclick="go('teachers',this)">👩‍🏫 老師</button>
+    <button class="tab" onclick="go('students',this)">🎓 學生</button>
+    <button class="tab" onclick="go('salary',this)">💰 薪資</button>
+    <button class="tab" onclick="go('parent',this)">👨‍👩‍👧 家長</button>
+    <button class="tab" onclick="go('setup',this)">⚙️ 設定</button>
+  </div>
+  <div class="nav-r">
+    <div class="mctl">
+      <button onclick="navPrev()">‹</button>
+      <span id="navLbl" style="min-width:75px;text-align:center;"></span>
+      <button onclick="navNext()">›</button>
+    </div>
+    <button class="vbtn on" id="btnM" onclick="setView('month')">月</button>
+    <button class="vbtn" id="btnW" onclick="setView('week')">週</button>
+  </div>
+</nav>
+
+<div class="sbar">
+  <div class="dot" id="dot"></div>
+  <span id="stxt">本機模式（可在設定頁連接 Google Sheets 同步）</span>
+  <div style="margin-left:auto;display:flex;gap:5px;align-items:center;">
+    <button class="btn bs" onclick="syncAll()">🔄 同步</button>
+    <span id="slast" style="color:var(--t3);"></span>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="page on" id="page-cal">
+  <div class="bar">
+    <button class="btn ba" onclick="openAddClass()">＋ 新增課程</button>
+    <button class="btn" onclick="goToday()" id="todayBtn">📍 回到今天</button>
+    <button class="btn" onclick="syncSched()" title="把學生固定時段批次新增到本月">🔁 同步固定課表</button>
+    <select class="fi" style="width:auto;padding:5px 8px;" id="filt" onchange="renderView()">
+      <option value="">全部老師</option>
+    </select>
+  </div>
+  <div id="calWrap"></div>
+</div>
+
+<div class="page" id="page-notify">
+  <div style="font-size:14px;font-weight:600;margin-bottom:12px;">📣 課程通知</div>
+  <div class="bar">
+    <input type="date" class="fi" style="width:auto;" id="ntD" onchange="renderNotify()">
+    <button class="btn" onclick="ntToday()">今天</button>
+  </div>
+  <div style="background:var(--sur);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:12px;font-weight:600;color:var(--acc);margin-bottom:6px;">✏️ 通知範本（可自由修改）</div>
+    <div style="font-size:11px;color:var(--t2);margin-bottom:6px;">變數：<code style="background:var(--bg);padding:1px 4px;border-radius:3px;">{學生}</code> <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">{時間}</code> <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">{日期}</code> <code style="background:var(--bg);padding:1px 4px;border-radius:3px;">{老師}</code></div>
+    <textarea class="ntpl" id="ntplEl"></textarea>
+    <div style="display:flex;gap:6px;margin-top:7px;">
+      <button class="btn ba bs" onclick="saveTpl()">💾 儲存範本</button>
+      <button class="btn bs" onclick="resetTpl()">↩ 還原預設</button>
+    </div>
+  </div>
+  <div id="ntList"></div>
+</div>
+
+<div class="page" id="page-teachers">
+  <div class="bar">
+    <span style="font-size:14px;font-weight:600;">老師管理</span>
+    <button class="btn ba" onclick="openAddTeacher()" style="margin-left:auto;">＋ 新增老師</button>
+  </div>
+  <div class="grid2" id="tList"></div>
+</div>
+
+<div class="page" id="page-students">
+  <div class="bar">
+    <span style="font-size:14px;font-weight:600;">學生帳戶</span>
+    <button class="btn ba" onclick="openAddStudent()" style="margin-left:auto;">＋ 新增學生</button>
+  </div>
+  <div class="grid2" id="sList"></div>
+</div>
+
+<div class="page" id="page-salary">
+  <div style="margin-bottom:10px;">
+    <div style="font-size:14px;font-weight:600;">💰 薪資報表</div>
+    <div style="font-size:11px;color:var(--t2);">每月分兩期結算</div>
+  </div>
+  <div class="bar">
+    <div class="ptab on" onclick="setPrd(1,this)">上半月 1–15</div>
+    <div class="ptab" onclick="setPrd(2,this)">下半月 16–30</div>
+    <div class="ptab" onclick="setPrd(0,this)">整月</div>
+  </div>
+  <div class="grid2" id="salEl"></div>
+</div>
+
+<div class="page" id="page-parent">
+  <div style="font-size:14px;font-weight:600;margin-bottom:10px;">👨‍👩‍👧 家長查詢</div>
+  <div class="bar">
+    <select class="fi" style="width:auto;padding:7px 10px;" id="parSel" onchange="renderParent()">
+      <option value="">選擇學生…</option>
+    </select>
+    <button class="btn ba" onclick="printParent()">🖨 列印給家長</button>
+  </div>
+  <div id="parArea"></div>
+</div>
+
+<div class="page" id="page-setup">
+  <div style="font-size:14px;font-weight:600;margin-bottom:12px;">⚙️ Google Sheets 同步設定</div>
+  <div style="background:var(--sur2);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:12px;font-weight:600;color:var(--acc);margin-bottom:7px;">Apps Script 程式碼</div>
+    <div class="cbox" id="gasCode">// EduSchedule GAS v4
+const SS=SpreadsheetApp.getActiveSpreadsheet();
+function doGet(e){return handle(e);}
+function doPost(e){return handle(e);}
+function handle(e){
+  const p=e.parameter; let r={};
+  try{
+    if(p.action==='read'){
+      r={teachers:rd('teachers'),students:rd('students'),
+         classes:rd('classes'),bonuses:rd('bonuses')};
+    }else if(p.action==='write'){
+      const d=JSON.parse(p.payload);
+      Object.keys(d).forEach(k=>ws(k,d[k]));
+      r={ok:true};
+    }
+  }catch(ex){r={error:ex.toString()};}
+  return ContentService.createTextOutput(JSON.stringify(r))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+function rd(name){
+  const s=SS.getSheetByName(name); if(!s)return[];
+  const rows=s.getDataRange().getValues(); if(rows.length<2)return[];
+  const h=rows[0];
+  return rows.slice(1).map(r=>{
+    const o={};
+    h.forEach((k,i)=>{
+      let v=r[i];
+      if(typeof v==='string'&&(v.startsWith('[')||v.startsWith('{'))){
+        try{v=JSON.parse(v);}catch(e){}
+      }
+      o[k]=v;
+    });
+    return o;
+  });
+}
+function ws(name,data){
+  let s=SS.getSheetByName(name);
+  if(!s)s=SS.insertSheet(name);
+  s.clearContents();
+  if(!data||!data.length)return;
+  const h=Object.keys(data[0]);
+  s.getRange(1,1,1,h.length).setValues([h]);
+  s.getRange(2,1,data.length,h.length).setValues(
+    data.map(o=>h.map(k=>{
+      const v=o[k];
+      return typeof v==='object'&&v!==null?JSON.stringify(v):(v??'');
+    }))
+  );
+}</div>
+    <button class="btn bs" style="margin-top:7px;" onclick="cpGas()">📋 複製程式碼</button>
+  </div>
+  <div class="fr">
+    <label class="fl">Apps Script 網址（部署後貼上）</label>
+    <div style="display:flex;gap:7px;">
+      <input type="text" class="fi" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      <button class="btn ba" onclick="saveGas()">✅ 儲存測試</button>
+    </div>
+    <div id="gasRes" style="margin-top:5px;font-size:12px;"></div>
+  </div>
+  <div style="background:var(--sur);border:1px solid var(--bd);border-radius:10px;padding:12px;">
+    <div style="font-size:11px;color:var(--t2);margin-bottom:3px;">目前連接網址</div>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--acc);word-break:break-all;" id="curUrl">（未設定，目前使用本機儲存）</div>
+  </div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="ov" id="ov-class">
+  <div class="modal">
+    <button class="mc" onclick="closeOv('ov-class')">×</button>
+    <h2 id="clT">新增課程</h2>
+    <div class="fr2">
+      <div class="fr"><label class="fl">日期</label><input type="date" class="fi" id="cl-d"></div>
+      <div class="fr"><label class="fl">時間</label><input type="time" class="fi" id="cl-t"></div>
+    </div>
+    <div class="fr"><label class="fl">老師</label>
+      <select class="fs" id="cl-tea" onchange="onTeaCh()"></select>
+    </div>
+    <div class="fr">
+      <label class="fl">學生（從清單勾選）</label>
+      <div class="chkbox" id="cl-stus"><div style="color:var(--t3);font-size:12px;padding:4px;">請先選老師</div></div>
+      <div class="prev" id="cl-prev"></div>
+    </div>
+    <div class="fr"><label class="fl">狀態</label>
+      <select class="fs" id="cl-st" onchange="updPrev()">
+        <option value="normal">正常上課</option>
+        <option value="teacher-leave">老師請假</option>
+        <option value="student-leave">學生請假</option>
+        <option value="makeup">補課</option>
+      </select>
+    </div>
+    <div class="fr"><label class="fl">備註</label><textarea class="fta" id="cl-n"></textarea></div>
+    <div class="ma">
+      <button class="btn" onclick="closeOv('ov-class')">取消</button>
+      <button class="btn ba" onclick="saveClass()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-teacher">
+  <div class="modal" style="width:440px;">
+    <button class="mc" onclick="closeOv('ov-teacher')">×</button>
+    <h2 id="teaT">新增老師</h2>
+    <div class="fr"><label class="fl">姓名</label><input type="text" class="fi" id="t-n"></div>
+    <div class="fr2">
+      <div class="fr"><label class="fl">每堂薪資（元）</label><input type="number" class="fi" id="t-r" placeholder="500"></div>
+      <div class="fr"><label class="fl">顏色</label><input type="color" class="fi" id="t-c" value="#4f8ef7" style="height:38px;padding:3px;"></div>
+    </div>
+    <div class="fr"><label class="fl">聯絡方式</label><input type="text" class="fi" id="t-ct"></div>
+    <div class="ma">
+      <button class="btn" onclick="closeOv('ov-teacher')">取消</button>
+      <button class="btn ba" onclick="saveTeacher()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-student">
+  <div class="modal" style="width:560px;">
+    <button class="mc" onclick="closeOv('ov-student')">×</button>
+    <h2 id="stuT">新增學生</h2>
+    <div class="fr"><label class="fl">姓名</label><input type="text" class="fi" id="s-n"></div>
+    <div class="fr">
+      <label class="fl">指定老師（Ctrl 多選）</label>
+      <select class="fs" id="s-tea" multiple style="min-height:75px;"></select>
+    </div>
+    <div class="fr2">
+      <div class="fr"><label class="fl">學費（10堂/元）</label><input type="number" class="fi" id="s-fee" placeholder="5000"></div>
+      <div class="fr"><label class="fl">剩餘課時</label><input type="number" class="fi" id="s-h" value="10"></div>
+    </div>
+    <div class="fr">
+      <label class="fl" style="color:var(--acc);font-weight:600;font-size:12px;">📅 固定上課時間（每週）</label>
+      <div id="s-sched" style="display:flex;flex-direction:column;gap:4px;margin-bottom:5px;"></div>
+      <button type="button" class="btn bs" onclick="addSR()">＋ 新增時段</button>
+    </div>
+    <div class="fr"><label class="fl">備註</label><input type="text" class="fi" id="s-note"></div>
+    <div class="ma">
+      <button class="btn" onclick="closeOv('ov-student')">取消</button>
+      <button class="btn ba" onclick="saveStudent()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-pay">
+  <div class="modal" style="width:390px;">
+    <button class="mc" onclick="closeOv('ov-pay')">×</button>
+    <h2>💳 記錄繳費 · <span id="payNm" style="color:var(--acc);"></span></h2>
+    <div class="fr"><label class="fl">繳費日期</label><input type="date" class="fi" id="pay-d"></div>
+    <div class="fr"><label class="fl">金額（元）</label><input type="number" class="fi" id="pay-a"></div>
+    <div class="fr"><label class="fl">備註（選填）</label><input type="text" class="fi" id="pay-n" placeholder="Line Pay / 現金…"></div>
+    <div class="ma">
+      <button class="btn" onclick="closeOv('ov-pay')">取消</button>
+      <button class="btn ba" onclick="savePay()">✅ 儲存</button>
+    </div>
+  </div>
+</div>
+
+<div class="prov" id="prov">
+  <button class="prcl" onclick="document.getElementById('prov').classList.remove('on')">✕ 關閉</button>
+  <div id="pContent"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  DATA — always persisted to localStorage
+// ═══════════════════════════════════════
+const LS_KEY = 'edu_db_v4';
+let db = {teachers:[], students:[], classes:[], bonuses:[]};
+
+function loadDB(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) db = JSON.parse(raw);
+  }catch(e){}
+  // ensure arrays
+  ['teachers','students','classes','bonuses'].forEach(k=>{
+    if(!Array.isArray(db[k])) db[k]=[];
+  });
+  db.students.forEach(fixStudent);
+}
+function saveDB(){
+  localStorage.setItem(LS_KEY, JSON.stringify(db));
+}
+function fixStudent(s){
+  if(!Array.isArray(s.log)) try{ s.log=JSON.parse(s.log||'[]'); }catch{s.log=[];}
+  if(!Array.isArray(s.paymentLog)) try{ s.paymentLog=JSON.parse(s.paymentLog||'[]'); }catch{s.paymentLog=[];}
+  if(!Array.isArray(s.teacherIds)){
+    try{ s.teacherIds=JSON.parse(s.teacherIds||'[]'); }catch{s.teacherIds=[];}
+    if(!s.teacherIds.length && s.teacherId) s.teacherIds=[s.teacherId];
+  }
+  if(!Array.isArray(s.schedule)) try{ s.schedule=JSON.parse(s.schedule||'[]'); }catch{s.schedule=[];}
+}
+
+// ═══════════════════════════════════════
+//  GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════
+let GAS = localStorage.getItem('gasUrl')||'';
+let syncTimer = null;
+
+function dotSet(cls,msg){
+  document.getElementById('dot').className='dot '+cls;
+  document.getElementById('stxt').textContent=msg;
+}
+async function gasReq(p){
+  if(!GAS) throw new Error('未設定網址');
+  const r = await fetch(GAS+'?'+new URLSearchParams(p));
+  const j = await r.json();
+  if(j.error) throw new Error(j.error);
+  return j;
+}
+async function syncAll(){
+  // 不管同步結果，本機資料永遠保留在畫面上
+  if(!GAS){ dotSet('ok','本機模式・資料安全'); return; }
+  // 不顯示 spin，避免讓使用者以為資料不見了
+  try{
+    const r = await gasReq({action:'read'});
+    let changed = false;
+    // 只有 GAS 回傳的資料筆數 >= 本機，才用 GAS 的（防止空資料覆蓋）
+    if(r.teachers && r.teachers.length >= db.teachers.length){ db.teachers = r.teachers; changed=true; }
+    if(r.students && r.students.length >= db.students.length){ db.students = r.students; db.students.forEach(fixStudent); changed=true; }
+    if(r.classes  && r.classes.length  >= db.classes.length) { db.classes  = r.classes;  changed=true; }
+    if(r.bonuses  && r.bonuses.length  >= db.bonuses.length) { db.bonuses  = r.bonuses;  changed=true; }
+    if(changed){
+      saveDB();
+      dotSet('ok','✅ 已同步');
+      document.getElementById('slast').textContent = new Date().toLocaleTimeString('zh-TW');
+      refresh();
+    } else {
+      // 本機資料比 GAS 多，上傳本機到 GAS
+      dotSet('ok','📤 上傳本機資料…');
+      await gasReq({action:'write', payload:JSON.stringify(db)});
+      dotSet('ok','✅ 本機資料已上傳');
+      document.getElementById('slast').textContent = new Date().toLocaleTimeString('zh-TW');
+    }
+  }catch(e){
+    // 連線失敗：完全不動本機資料，只更新狀態列文字
+    dotSet('ok','本機模式（雲端暫時無法連線）');
+  }
+}
+async function pushDB(partial){
+  // STEP 1: 永遠先存本機，不管 GAS 狀態
+  Object.keys(partial).forEach(k=>{ if(db[k]!==undefined) db[k]=partial[k]; });
+  saveDB();
+  renderView(); // 立刻更新畫面，不等 GAS
+  if(!GAS){ dotSet('ok','已儲存（本機）'); return; }
+  // STEP 2: 背景嘗試存 GAS，失敗不影響任何東西
+  try{
+    dotSet('spin','同步到雲端…');
+    await gasReq({action:'write', payload:JSON.stringify(partial)});
+    dotSet('ok','✅ 已儲存');
+    document.getElementById('slast').textContent = new Date().toLocaleTimeString('zh-TW');
+  }catch(e){
+    dotSet('ok','本機已儲存（雲端暫時無法連線）');
+    // 本機資料安全，畫面繼續顯示
+  }
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+const gid = ()=>'_'+Math.random().toString(36).slice(2,8);
+const pad  = n=>String(n).padStart(2,'0');
+const tday = ()=>{ const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const mstr = ()=>`${yr}-${pad(mo)}`;
+const tbyid = id => db.teachers.find(t=>t.id===id);
+const tcol  = id => { const t=tbyid(id); return t?t.color:'#4f8ef7'; };
+const tname = id => { const t=tbyid(id); return t?t.name:'—'; };
+const WD = ['週日','週一','週二','週三','週四','週五','週六'];
+const STC = {normal:'var(--g)','teacher-leave':'var(--r)','student-leave':'var(--y)',makeup:'var(--p)'};
+const STB = {normal:'rgba(79,207,142,.16)','teacher-leave':'rgba(247,107,107,.16)','student-leave':'rgba(247,201,79,.16)',makeup:'rgba(160,122,247,.16)'};
+const STLBL = {normal:'✅ 正常','teacher-leave':'🚫 老師假','student-leave':'😷 學生假',makeup:'🔄 補課'};
+const STCLS = {normal:'sn','teacher-leave':'stl','student-leave':'ssl',makeup:'smk'};
+
+function closeOv(id){ document.getElementById(id).classList.remove('on'); }
+
+// ═══════════════════════════════════════
+//  TABS & NAV
+// ═══════════════════════════════════════
+let curTab='cal', viewMode='month', yr=new Date().getFullYear(), mo=new Date().getMonth()+1, wkOff=0, salPrd=1;
+let eClassId=null, eTeaId=null, eStuId=null, ePayId=null;
+
+function go(tab, el){
+  curTab=tab;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('page-'+tab).classList.add('on');
+  if(el) el.classList.add('on');
+  refresh();
+}
+function refresh(){
+  fillFilterSel();
+  if(curTab==='cal')       renderView();
+  else if(curTab==='notify')  { ntToday(); renderNotify(); }
+  else if(curTab==='teachers') renderTeachers();
+  else if(curTab==='students') renderStudents();
+  else if(curTab==='salary')   renderSalary();
+  else if(curTab==='parent')   fillParentSel();
+}
+function fillFilterSel(){
+  const sel=document.getElementById('filt'); if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">全部老師</option>';
+  db.teachers.forEach(t=>{ sel.innerHTML+=`<option value="${t.id}"${cur===t.id?' selected':''}>${t.name}</option>`; });
+}
+function goToday(){
+  const now = new Date();
+  yr = now.getFullYear();
+  mo = now.getMonth()+1;
+  wkOff = 0;
+  updNavLbl();
+  renderView();
+}
+function setView(m){
+  viewMode=m;
+  document.getElementById('btnM').className='vbtn'+(m==='month'?' on':'');
+  document.getElementById('btnW').className='vbtn'+(m==='week'?' on':'');
+  if(m==='week') wkOff=0;
+  updNavLbl(); renderView();
+}
+function navPrev(){
+  if(viewMode==='month'){ mo--; if(mo<1){mo=12;yr--;} }
+  else wkOff--;
+  updNavLbl(); renderView();
+}
+function navNext(){
+  if(viewMode==='month'){ mo++; if(mo>12){mo=1;yr++;} }
+  else wkOff++;
+  updNavLbl(); renderView();
+}
+function updNavLbl(){
+  if(viewMode==='month'){
+    document.getElementById('navLbl').textContent=`${yr}-${pad(mo)}`;
+  } else {
+    const ws=wkStart();
+    document.getElementById('navLbl').textContent=`${ws.getMonth()+1}/${ws.getDate()}起`;
+  }
+}
+function wkStart(){
+  const n=new Date(), d=new Date(n);
+  d.setDate(d.getDate()-d.getDay()+wkOff*7);
+  return d;
+}
+
+// ═══════════════════════════════════════
+//  CALENDAR RENDER
+// ═══════════════════════════════════════
+function renderView(){
+  if(viewMode==='month') renderMonth();
+  else renderWeek();
+}
+
+function renderMonth(){
+  const filterT = document.getElementById('filt')?.value||'';
+  const td = tday();
+  const firstDay = new Date(yr,mo-1,1).getDay();
+  const dim = new Date(yr,mo,0).getDate();
+  const prevDim = new Date(yr,mo-1,0).getDate();
+
+  let cells='';
+  // prev month padding
+  for(let i=firstDay-1;i>=0;i--)
+    cells+=`<div class="cell dim"><div class="cell-d">${prevDim-i}</div></div>`;
+
+  for(let d=1;d<=dim;d++){
+    const ds=`${yr}-${pad(mo)}-${pad(d)}`;
+    let cls=db.classes.filter(c=>String(c.date)===ds);
+    if(filterT) cls=cls.filter(c=>String(c.teacherId)===filterT);
+    cls.sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+    const isT=ds===td;
+
+    let pillsHtml='';
+    cls.slice(0,3).forEach(c=>{
+      const col=tcol(c.teacherId);
+      const bg=STB[c.status]||STB.normal;
+      const fc=STC[c.status]||STC.normal;
+      const icon={'teacher-leave':'🚫','student-leave':'😷',makeup:'🔄',normal:''}[c.status]||'';
+      const stu=(String(c.students||'')).split(',').map(s=>s.trim()).join('・');
+      pillsHtml+=`<div class="pill" style="background:${bg};border-left-color:${col};"
+        onclick="showClassDetail('${c.id}');event.stopPropagation();">
+        <div class="pill-time" style="color:${col};">${c.time||''}${icon?' '+icon:''}</div>
+        <div class="pill-stu" style="color:${fc};">👤 ${stu}</div>
+        <div class="pill-tea" style="color:${col};">✏️ ${tname(c.teacherId)}</div>
+      </div>`;
+    });
+    if(cls.length>3){
+      pillsHtml+=`<div class="more-btn" onclick="showDayDetail('${ds}');event.stopPropagation();">＋${cls.length-3}堂</div>`;
+    }
+
+    cells+=`<div class="cell${isT?' td':''}" onclick="openAddDate('${ds}')">
+      <div class="cell-d">${d}${isT?'<span class="td-dot">今天</span>':''}</div>
+      ${pillsHtml}
+      <div class="add-btn" onclick="openAddDate('${ds}');event.stopPropagation();">＋</div>
+    </div>`;
+  }
+  // next month padding
+  const rem=(7-(firstDay+dim)%7)%7;
+  for(let d=1;d<=rem;d++)
+    cells+=`<div class="cell dim"><div class="cell-d">${d}</div></div>`;
+
+  document.getElementById('calWrap').innerHTML=`
+    <div class="cal">
+      <div class="cal-hd">${WD.map(w=>`<div class="cal-dn">${w}</div>`).join('')}</div>
+      <div class="cal-grid">${cells}</div>
+    </div>`;
+}
+
+function renderWeek(){
+  const filterT=document.getElementById('filt')?.value||'';
+  const ws=wkStart();
+  const td=tday();
+  const days=[];
+  for(let i=0;i<7;i++){ const d=new Date(ws); d.setDate(d.getDate()+i); days.push(d); }
+
+  // 動態產生包含有課程的時段 + 預設範圍
+  const allTimes = db.classes
+    .filter(c=>{ const ds=days.map(d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`); return ds.includes(String(c.date)); })
+    .map(c=>String(c.time||'').slice(0,2)).filter(h=>h>='08'&&h<='22');
+  const minH = allTimes.length ? Math.min(14,...allTimes.map(Number)) : 14;
+  const maxH = allTimes.length ? Math.max(17,...allTimes.map(Number)) : 20;
+  const SLOTS = [];
+  for(let h=Math.max(8,minH-1); h<=Math.min(22,maxH+1); h++) SLOTS.push(String(h).padStart(2,'0'));
+
+  const headCells=days.map(d=>{
+    const ds=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const isT=ds===td;
+    return `<div class="wk-hc${isT?' td':''}">${WD[d.getDay()]}<br>
+      <span style="font-size:11px;font-family:'DM Mono',monospace;">${d.getMonth()+1}/${d.getDate()}</span>
+      ${isT?'<br><span class="td-dot" style="font-size:9px;">今天</span>':''}
+    </div>`;
+  }).join('');
+
+  const bodyRows=SLOTS.map(hr=>{
+    const rowCells=days.map(d=>{
+      const ds=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      const isT=ds===td;
+      let cls=db.classes.filter(c=>{
+        const ct=String(c.time||'');
+        return String(c.date)===ds && ct.startsWith(hr+':');
+      });
+      if(filterT) cls=cls.filter(c=>String(c.teacherId)===filterT);
+
+      let html='';
+      cls.forEach(c=>{
+        const col=tcol(c.teacherId);
+        const bg=STB[c.status]||STB.normal;
+        const fc=STC[c.status]||STC.normal;
+        const icon={'teacher-leave':'🚫','student-leave':'😷',makeup:'🔄',normal:''}[c.status]||'';
+        const stu=(String(c.students||'')).split(',').map(s=>s.trim()).join('・');
+        html+=`<div class="wpill" style="background:${bg};border-left-color:${col};"
+          onclick="showClassDetail('${c.id}');event.stopPropagation();">
+          <div class="wpill-time" style="color:${col};">${c.time||''}${icon?' '+icon:''}</div>
+          <div class="wpill-stu" style="color:${fc};">👤 ${stu}</div>
+          <div class="wpill-tea" style="color:${col};">✏️ ${tname(c.teacherId)}</div>
+          <div class="wpill-acts" onclick="event.stopPropagation();">
+            <button class="wact" style="background:rgba(79,207,142,.2);color:var(--g);" onclick="qs('${c.id}','normal')">✅ 正常</button>
+            <button class="wact" style="background:rgba(247,107,107,.2);color:var(--r);" onclick="qs('${c.id}','teacher-leave')">🚫 師假</button>
+            <button class="wact" style="background:rgba(247,201,79,.2);color:var(--y);" onclick="qs('${c.id}','student-leave')">😷 生假</button>
+          </div>
+        </div>`;
+      });
+
+      return `<div class="wk-c${isT?' td':''}" onclick="openAddDate('${ds}')" style="cursor:pointer;">${html}</div>`;
+    }).join('');
+
+    return `<div class="wk-row">
+      <div class="wk-tc">${hr}:00</div>${rowCells}
+    </div>`;
+  }).join('');
+
+  document.getElementById('calWrap').innerHTML=`
+    <div class="week">
+      <div class="wk-hd">
+        <div class="wk-hc" style="background:var(--sur2);"></div>${headCells}
+      </div>
+      <div class="wk-body">${bodyRows}</div>
+    </div>`;
+}
+
+// quick status change
+async function qs(id,status){
+  const c=db.classes.find(x=>x.id===id); if(!c)return;
+  c.status=status;
+  await pushDB({classes:db.classes});
+  renderView();
+}
+
+// detail popup
+function showClassDetail(id){
+  const c=db.classes.find(x=>x.id===id); if(!c)return;
+  const t=tbyid(c.teacherId);
+  const col=t?t.color:'#4f8ef7';
+  const stu=(String(c.students||'')).split(',').map(s=>s.trim()).join('、');
+  const popup=document.createElement('div');
+  popup.className='ov on'; popup.id='ov-cdtl';
+  popup.innerHTML=`<div class="modal" style="width:440px;">
+    <button class="mc" onclick="document.getElementById('ov-cdtl').remove()">×</button>
+    <h2 style="color:${col};">${c.date} ${c.time}</h2>
+    <div style="font-size:13px;display:flex;flex-direction:column;gap:9px;margin-bottom:14px;">
+      <div><div style="font-size:10px;color:var(--t2);margin-bottom:2px;">老師</div>
+        <span style="background:${col}22;color:${col};border-radius:12px;padding:2px 10px;font-size:12px;font-weight:600;">${t?t.name:'—'}</span>
+      </div>
+      <div><div style="font-size:10px;color:var(--t2);margin-bottom:2px;">學生</div>
+        <div style="font-size:15px;font-weight:700;">👤 ${stu}</div>
+      </div>
+      <div><div style="font-size:10px;color:var(--t2);margin-bottom:2px;">狀態</div>
+        <span class="sb ${STCLS[c.status]||'sn'}">${STLBL[c.status]||'—'}</span>
+      </div>
+      ${c.note?`<div style="color:var(--t2);font-size:12px;">備註：${c.note}</div>`:''}
+    </div>
+    <div style="font-size:11px;color:var(--t2);font-weight:600;margin-bottom:6px;">快速更改出勤：</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn bg bs" onclick="qs('${c.id}','normal');document.getElementById('ov-cdtl').remove()">✅ 正常</button>
+      <button class="btn bs" style="color:var(--r);" onclick="qs('${c.id}','teacher-leave');document.getElementById('ov-cdtl').remove()">🚫 老師假</button>
+      <button class="btn bs" style="color:var(--y);" onclick="qs('${c.id}','student-leave');document.getElementById('ov-cdtl').remove()">😷 學生假</button>
+      <button class="btn bs" style="color:var(--p);" onclick="qs('${c.id}','makeup');document.getElementById('ov-cdtl').remove()">🔄 補課</button>
+    </div>
+    <div style="display:flex;gap:7px;justify-content:flex-end;">
+      <button class="btn" onclick="document.getElementById('ov-cdtl').remove()">關閉</button>
+      <button class="btn ba" onclick="document.getElementById('ov-cdtl').remove();openEditClass('${c.id}')">✏️ 編輯</button>
+      <button class="btn br" onclick="document.getElementById('ov-cdtl').remove();delClass('${c.id}')">刪除</button>
+    </div>
+  </div>`;
+  popup.addEventListener('click',e=>{ if(e.target===popup) popup.remove(); });
+  document.body.appendChild(popup);
+}
+
+function showDayDetail(ds){
+  const cls=db.classes.filter(c=>String(c.date)===ds).sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+  const popup=document.createElement('div'); popup.className='ov on'; popup.id='ov-day';
+  popup.innerHTML=`<div class="modal" style="width:480px;">
+    <button class="mc" onclick="document.getElementById('ov-day').remove()">×</button>
+    <h2>📅 ${ds}（${cls.length}堂）</h2>
+    ${cls.map(c=>{
+      const t=tbyid(c.teacherId); const col=t?t.color:'#4f8ef7';
+      const stu=(String(c.students||'')).split(',').map(s=>s.trim()).join('、');
+      return `<div style="border:1px solid var(--bd);border-radius:8px;padding:9px 11px;margin-bottom:7px;border-left:3px solid ${col};">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="color:${col};font-family:'DM Mono',monospace;font-weight:700;">${c.time}</span>
+          <span class="sb ${STCLS[c.status]||'sn'}">${STLBL[c.status]}</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:2px;">👤 ${stu}</div>
+        <div style="font-size:11px;color:var(--t2);margin-bottom:7px;">✏️ ${t?t.name:'—'}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn bg bs" onclick="qs('${c.id}','normal');document.getElementById('ov-day').remove()">✅ 正常</button>
+          <button class="btn bs" style="color:var(--r);" onclick="qs('${c.id}','teacher-leave');document.getElementById('ov-day').remove()">🚫 老師假</button>
+          <button class="btn bs" style="color:var(--y);" onclick="qs('${c.id}','student-leave');document.getElementById('ov-day').remove()">😷 學生假</button>
+          <button class="btn bs" onclick="document.getElementById('ov-day').remove();openEditClass('${c.id}')">✏️ 編輯</button>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="text-align:right;"><button class="btn" onclick="document.getElementById('ov-day').remove()">關閉</button></div>
+  </div>`;
+  popup.addEventListener('click',e=>{ if(e.target===popup) popup.remove(); });
+  document.body.appendChild(popup);
+}
+
+// ═══ SYNC FIXED SCHEDULE ═══
+async function syncSched(){
+  const dim=new Date(yr,mo,0).getDate();
+  let n=0;
+  db.students.forEach(s=>{
+    (s.schedule||[]).forEach(r=>{
+      for(let d=1;d<=dim;d++){
+        const dt=new Date(yr,mo-1,d);
+        if(dt.getDay()===Number(r.weekday)){
+          const ds=`${yr}-${pad(mo)}-${pad(d)}`;
+          const dup=db.classes.find(c=>String(c.date)===ds&&String(c.time)===String(r.time)&&String(c.teacherId)===String(r.teacherId)&&String(c.students||'').includes(s.name));
+          if(!dup){ db.classes.push({id:gid(),date:ds,time:r.time,teacherId:r.teacherId,students:s.name,status:'normal',note:'固定課表'}); n++; }
+        }
+      }
+    });
+  });
+  if(!n){ alert('本月固定課表已全部存在，沒有新課程需要新增'); return; }
+  await pushDB({classes:db.classes});
+  renderView();
+  alert(`已新增 ${n} 堂固定課程！`);
+}
+
+// ═══ CLASS CRUD ═══
+function openAddClass(){ openAddDate(tday()); }
+function openAddDate(ds){
+  eClassId=null;
+  document.getElementById('clT').textContent='新增課程';
+  document.getElementById('cl-d').value=ds;
+  document.getElementById('cl-t').value='16:00';
+  document.getElementById('cl-st').value='normal';
+  document.getElementById('cl-n').value='';
+  fillTeaSel('cl-tea','');
+  renderStuPicker('','');
+  document.getElementById('ov-class').classList.add('on');
+}
+function openEditClass(id){
+  const c=db.classes.find(x=>x.id===id); if(!c)return;
+  eClassId=id;
+  document.getElementById('clT').textContent='編輯課程';
+  document.getElementById('cl-d').value=c.date;
+  document.getElementById('cl-t').value=c.time||'';
+  document.getElementById('cl-st').value=c.status||'normal';
+  document.getElementById('cl-n').value=c.note||'';
+  fillTeaSel('cl-tea',c.teacherId);
+  const sels=(String(c.students||'')).split(',').map(s=>s.trim());
+  renderStuPicker(c.teacherId,sels);
+  document.getElementById('ov-class').classList.add('on');
+}
+function onTeaCh(){
+  renderStuPicker(document.getElementById('cl-tea').value,[]);
+  updPrev();
+}
+function fillTeaSel(elId,cur){
+  const el=document.getElementById(elId);
+  el.innerHTML='<option value="">選擇老師…</option>';
+  db.teachers.forEach(t=>el.innerHTML+=`<option value="${t.id}"${String(cur)===t.id?' selected':''}>${t.name}</option>`);
+}
+function renderStuPicker(tid,selNames){
+  const box=document.getElementById('cl-stus');
+  const list=tid ? db.students.filter(s=>(s.teacherIds||[]).map(String).includes(String(tid))) : db.students;
+  if(!list.length){
+    box.innerHTML=`<div style="color:var(--t3);font-size:12px;padding:4px;">${tid?'這位老師無學生':'請先選老師'}</div>`;
+    document.getElementById('cl-prev').innerHTML='';
+    return;
+  }
+  box.innerHTML=list.map(s=>{
+    const h=Number(s.hours)||0;
+    const hc=h===0?'hze':h<=2?'hlo':'hok';
+    const ck=selNames.includes(s.name);
+    return `<label class="chki">
+      <input type="checkbox" value="${s.id}" ${ck?'checked':''} onchange="updPrev()">
+      <span style="flex:1;font-size:13px;">${s.name}</span>
+      <span class="hn ${hc}">${h}堂</span>
+    </label>`;
+  }).join('');
+  updPrev();
+}
+function getChk(){ return Array.from(document.querySelectorAll('#cl-stus input:checked')).map(cb=>db.students.find(s=>s.id===cb.value)).filter(Boolean); }
+function updPrev(){
+  const st=document.getElementById('cl-st').value;
+  const prev=document.getElementById('cl-prev');
+  const chk=getChk();
+  if(!chk.length){ prev.innerHTML=''; return; }
+  if(st!=='normal'){ prev.innerHTML='<span style="font-size:11px;color:var(--t2);">非正常上課不扣課時</span>'; return; }
+  prev.innerHTML=chk.map(s=>{
+    const h=Number(s.hours)||0, af=Math.max(h-1,0);
+    const col=af===0?'var(--r)':af<=2?'var(--y)':'var(--g)';
+    return `<span class="pchip" style="background:${col}18;color:${col};">${s.name} ${h}→<b>${af}</b>${h===0?' ⚠️':''}</span>`;
+  }).join('');
+}
+async function saveClass(){
+  const date=document.getElementById('cl-d').value;
+  const time=document.getElementById('cl-t').value;
+  const tid=document.getElementById('cl-tea').value;
+  const status=document.getElementById('cl-st').value;
+  const note=document.getElementById('cl-n').value.trim();
+  const chk=getChk();
+  if(!date||!tid||!chk.length){ alert('請填日期、選老師，並勾選至少一位學生'); return; }
+  const stuStr=chk.map(s=>s.name).join(', ');
+  const isNew=!eClassId;
+  if(eClassId){ const c=db.classes.find(x=>x.id===eClassId); Object.assign(c,{date,time,teacherId:tid,students:stuStr,status,note}); }
+  else db.classes.push({id:gid(),date,time,teacherId:tid,students:stuStr,status,note});
+  if(isNew&&status==='normal'){
+    chk.forEach(s=>{ if(Number(s.hours)>0){ s.hours=Number(s.hours)-1; s.log=s.log||[]; s.log.unshift({date,note:'正常上課',change:-1,balance:s.hours}); } });
+    await pushDB({classes:db.classes,students:db.students});
+  } else {
+    await pushDB({classes:db.classes});
+  }
+  closeOv('ov-class');
+  renderView();
+}
+async function delClass(id){
+  if(!confirm('確定刪除？')) return;
+  db.classes=db.classes.filter(x=>x.id!==id);
+  await pushDB({classes:db.classes});
+  renderView();
+}
+
+// ═══ NOTIFY ═══
+const DEFAULT_TPL=`📚 溫馨提醒\n\n親愛的 {學生} 同學您好！\n提醒您今天（{日期}）{時間} 有英語線上課程，\n請記得準時上線！🎯\n\n任課老師：{老師}\n如有問題請提前告知，謝謝 😊`;
+function getTpl(){ return localStorage.getItem('ntpl')||DEFAULT_TPL; }
+function saveTpl(){ localStorage.setItem('ntpl',document.getElementById('ntplEl').value); alert('範本已儲存！'); }
+function resetTpl(){ document.getElementById('ntplEl').value=DEFAULT_TPL; localStorage.removeItem('ntpl'); }
+function ntToday(){ document.getElementById('ntD').value=tday(); }
+function renderNotify(){
+  document.getElementById('ntplEl').value=getTpl();
+  const date=document.getElementById('ntD').value; if(!date)return;
+  const cls=db.classes.filter(c=>String(c.date)===date&&c.status==='normal').sort((a,b)=>String(a.time||'').localeCompare(String(b.time||'')));
+  const list=document.getElementById('ntList');
+  if(!cls.length){ list.innerHTML=`<div class="empty">📭 ${date} 沒有正常上課的課程</div>`; return; }
+  const dtFmt=new Date(date+'T12:00').toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'long'});
+  list.innerHTML=cls.map(c=>{
+    const t=tbyid(c.teacherId);
+    const stus=(String(c.students||'')).split(',').map(s=>s.trim()).filter(Boolean);
+    const tpl=getTpl();
+    const msg=tpl.replace(/\{學生\}/g,stus.join('、')).replace(/\{日期\}/g,dtFmt).replace(/\{時間\}/g,c.time||'').replace(/\{老師\}/g,tname(c.teacherId));
+    const mid='nm'+c.id;
+    return `<div style="background:var(--sur);border:1px solid var(--bd);border-radius:10px;padding:13px;margin-bottom:9px;">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:7px;">
+        ${t?`<span style="background:${t.color}22;color:${t.color};border-radius:12px;padding:2px 9px;font-size:11px;font-weight:600;">${t.name}</span>`:''}
+        <span style="font-family:'DM Mono',monospace;font-size:12px;">${c.time}</span>
+        <span style="color:var(--t2);font-size:11px;">👤 ${c.students}</span>
+      </div>
+      <div class="nmsg" id="${mid}">${msg}</div>
+      <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;">
+        <button class="btn bg bs" onclick="cpMsg('${mid}')">📋 複製</button>
+        <a href="https://line.me/R/share?text=${encodeURIComponent(msg)}" target="_blank" class="btn bs" style="background:#00b900;color:#fff;border-color:#00b900;text-decoration:none;">🟢 Line</a>
+        <a href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" class="btn bs" style="background:#25d366;color:#fff;border-color:#25d366;text-decoration:none;">💬 WA</a>
+        <a href="sms:?body=${encodeURIComponent(msg)}" class="btn bs">📱 SMS</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+function cpMsg(mid){ const el=document.getElementById(mid); navigator.clipboard.writeText(el.textContent.trim()).then(()=>{ el.classList.add('ncf'); setTimeout(()=>el.classList.remove('ncf'),600); }); }
+
+// ═══ TEACHERS ═══
+function renderTeachers(){
+  const el=document.getElementById('tList');
+  if(!db.teachers.length){ el.innerHTML='<div class="empty">尚無老師資料</div>'; return; }
+  const ms=mstr();
+  el.innerHTML=db.teachers.map(t=>{
+    const cnt=db.classes.filter(c=>String(c.teacherId)===t.id&&String(c.date||'').startsWith(ms)&&c.status==='normal').length;
+    return `<div class="card">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+        <div class="av" style="background:${t.color}22;color:${t.color};">${(t.name||'?')[0]}</div>
+        <div><div style="font-size:14px;font-weight:700;">${t.name}</div><div style="font-size:11px;color:var(--t2);">${t.contact||'—'}</div></div>
+      </div>
+      <div class="sr"><span>每堂薪資</span><span style="color:var(--g);">NT$${(t.rate||0).toLocaleString()}</span></div>
+      <div class="sr"><span>本月正常</span><span>${cnt} 堂</span></div>
+      <div style="display:flex;gap:5px;margin-top:10px;">
+        <button class="btn bs" style="flex:1;" onclick="openEditTeacher('${t.id}')">編輯</button>
+        <button class="btn br bs" onclick="delTeacher('${t.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openAddTeacher(){
+  eTeaId=null;
+  document.getElementById('teaT').textContent='新增老師';
+  ['t-n','t-ct'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-r').value='';
+  document.getElementById('t-c').value='#4f8ef7';
+  document.getElementById('ov-teacher').classList.add('on');
+}
+function openEditTeacher(id){
+  const t=db.teachers.find(x=>x.id===id); if(!t)return;
+  eTeaId=id;
+  document.getElementById('teaT').textContent='編輯老師';
+  document.getElementById('t-n').value=t.name||'';
+  document.getElementById('t-r').value=t.rate||'';
+  document.getElementById('t-c').value=t.color||'#4f8ef7';
+  document.getElementById('t-ct').value=t.contact||'';
+  document.getElementById('ov-teacher').classList.add('on');
+}
+async function saveTeacher(){
+  const name=document.getElementById('t-n').value.trim();
+  if(!name){ alert('請輸入姓名'); return; }
+  const rate=parseInt(document.getElementById('t-r').value)||0;
+  const color=document.getElementById('t-c').value;
+  const contact=document.getElementById('t-ct').value.trim();
+  if(eTeaId){ const t=db.teachers.find(x=>x.id===eTeaId); Object.assign(t,{name,rate,color,contact}); }
+  else db.teachers.push({id:gid(),name,rate,color,contact});
+  await pushDB({teachers:db.teachers});
+  closeOv('ov-teacher'); renderTeachers();
+}
+async function delTeacher(id){
+  if(!confirm('確定刪除？')) return;
+  db.teachers=db.teachers.filter(x=>x.id!==id);
+  await pushDB({teachers:db.teachers}); renderTeachers();
+}
+
+// ═══ STUDENTS ═══
+function renderStudents(){
+  const el=document.getElementById('sList');
+  if(!db.students.length){ el.innerHTML='<div class="empty">尚無學生資料</div>'; return; }
+  el.innerHTML=db.students.map(s=>{
+    const tids=(s.teacherIds||[]);
+    const teaTags=tids.map(id=>{ const t=tbyid(id); return t?`<span class="stag" style="background:${t.color}22;color:${t.color};border-color:${t.color}44;">${t.name}</span>`:''; }).join('');
+    const h=Number(s.hours)||0, pct=Math.min(h/10*100,100), lo=h<=2;
+    const sched=(s.schedule||[]).map(r=>{ const t=tbyid(r.teacherId); const tc=t?t.color:'#4f8ef7'; return `<span class="stag" style="background:${tc}18;color:${tc};border-color:${tc}44;">${WD[r.weekday]||'?'} ${r.time} ${t?t.name:''}</span>`; }).join('');
+    const log=(s.log||[]).slice(0,4);
+    const pays=(s.paymentLog||[]).slice(0,2);
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;margin-bottom:7px;">
+        <div><div style="font-size:14px;font-weight:700;">${s.name}</div><div style="margin-top:3px;">${teaTags||'<span style="font-size:11px;color:var(--t2);">未指定老師</span>'}</div></div>
+        <div style="text-align:right;"><div style="font-size:20px;font-weight:700;color:${lo?'var(--r)':'var(--g)'};">${h}</div><div style="font-size:10px;color:var(--t2);">堂</div></div>
+      </div>
+      <div class="hbar"><div class="hfill${lo?' lo':''}" style="width:${pct}%;"></div></div>
+      ${sched?`<div style="display:flex;flex-wrap:wrap;margin:4px 0;">${sched}</div>`:''}
+      <div style="font-size:11px;color:var(--t2);">NT$${Number(s.fee||0).toLocaleString()}/10堂${s.note?' · '+s.note:''}</div>
+      ${lo?'<div style="font-size:11px;color:var(--r);margin-top:2px;">⚠ 課時不足</div>':''}
+      ${pays.length?`<div style="font-size:10px;color:var(--y);margin-top:3px;">${pays.map(p=>`✅${p.date} NT$${Number(p.amount).toLocaleString()}`).join(' · ')}</div>`:''}
+      <div style="max-height:65px;overflow-y:auto;margin-top:5px;">${log.map(l=>`<div class="lge"><span>${l.date} ${l.note}</span><span style="color:${l.change<0?'var(--r)':'var(--g)'};">${l.change<0?l.change:l.change===0?'':'+'+l.change}→${l.balance}</span></div>`).join('')}</div>
+      <div style="display:flex;gap:4px;margin-top:9px;flex-wrap:wrap;">
+        <button class="btn bs" onclick="openEditStudent('${s.id}')">編輯</button>
+        <button class="btn bs" onclick="addHours('${s.id}')">＋10堂</button>
+        <button class="btn bs" onclick="openPay('${s.id}')">💳 繳費</button>
+        <button class="btn br bs" onclick="delStudent('${s.id}')">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openAddStudent(){
+  eStuId=null;
+  document.getElementById('stuT').textContent='新增學生';
+  ['s-n','s-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('s-fee').value='';
+  document.getElementById('s-h').value=10;
+  fillMultiTea([]);
+  document.getElementById('s-sched').innerHTML='';
+  document.getElementById('ov-student').classList.add('on');
+}
+function openEditStudent(id){
+  const s=db.students.find(x=>x.id===id); if(!s)return;
+  eStuId=id;
+  document.getElementById('stuT').textContent='編輯學生';
+  document.getElementById('s-n').value=s.name||'';
+  document.getElementById('s-fee').value=s.fee||'';
+  document.getElementById('s-h').value=s.hours||0;
+  document.getElementById('s-note').value=s.note||'';
+  fillMultiTea(s.teacherIds||[]);
+  document.getElementById('s-sched').innerHTML='';
+  (s.schedule||[]).forEach(r=>addSR(r));
+  document.getElementById('ov-student').classList.add('on');
+}
+function fillMultiTea(sel){
+  const el=document.getElementById('s-tea'); el.innerHTML='';
+  db.teachers.forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; if(sel.map(String).includes(t.id)) o.selected=true; el.appendChild(o); });
+}
+function addSR(data){
+  const c=document.getElementById('s-sched');
+  const div=document.createElement('div'); div.className='srow';
+  const wSel=document.createElement('select'); wSel.className='fs'; wSel.style.cssText='width:66px;padding:4px;';
+  WD.forEach((w,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=w; wSel.appendChild(o); });
+  if(data) wSel.value=data.weekday;
+  const tIn=document.createElement('input'); tIn.type='time'; tIn.className='fi'; tIn.style.cssText='width:85px;padding:4px;';
+  tIn.value=data?data.time:'16:00';
+  const tSel=document.createElement('select'); tSel.className='fs'; tSel.style.cssText='flex:1;padding:4px;';
+  tSel.innerHTML='<option value="">選老師…</option>';
+  db.teachers.forEach(t=>{ const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; tSel.appendChild(o); });
+  if(data&&data.teacherId) tSel.value=data.teacherId;
+  const rm=document.createElement('button'); rm.type='button'; rm.textContent='✕'; rm.className='btn br bs'; rm.onclick=()=>div.remove();
+  div.append(wSel,tIn,tSel,rm); c.appendChild(div);
+}
+function collectSR(){
+  return Array.from(document.getElementById('s-sched').children).map(div=>{
+    const sels=div.querySelectorAll('select'); const inp=div.querySelector('input[type=time]');
+    return{weekday:parseInt(sels[0].value),time:inp.value,teacherId:sels[1].value};
+  });
+}
+async function saveStudent(){
+  const name=document.getElementById('s-n').value.trim();
+  if(!name){ alert('請輸入姓名'); return; }
+  const teacherIds=Array.from(document.getElementById('s-tea').selectedOptions).map(o=>o.value);
+  const fee=parseInt(document.getElementById('s-fee').value)||0;
+  const hours=parseInt(document.getElementById('s-h').value)||0;
+  const note=document.getElementById('s-note').value.trim();
+  const schedule=collectSR();
+  if(eStuId){ const s=db.students.find(x=>x.id===eStuId); Object.assign(s,{name,teacherIds,fee,hours,note,schedule}); }
+  else db.students.push({id:gid(),name,teacherIds,fee,hours,note,schedule,log:[],paymentLog:[]});
+  await pushDB({students:db.students});
+  closeOv('ov-student'); renderStudents();
+}
+async function addHours(id){
+  const s=db.students.find(x=>x.id===id); if(!s)return;
+  s.hours=(Number(s.hours)||0)+10; s.log=s.log||[];
+  s.log.unshift({date:tday(),note:'充值10堂',change:+10,balance:s.hours});
+  await pushDB({students:db.students}); renderStudents();
+}
+async function delStudent(id){
+  if(!confirm('確定刪除？')) return;
+  db.students=db.students.filter(x=>x.id!==id);
+  await pushDB({students:db.students}); renderStudents();
+}
+
+// ═══ PAYMENT ═══
+function openPay(id){
+  const s=db.students.find(x=>x.id===id); if(!s)return;
+  ePayId=id;
+  document.getElementById('payNm').textContent=s.name;
+  document.getElementById('pay-d').value=tday();
+  document.getElementById('pay-a').value=s.fee||'';
+  document.getElementById('pay-n').value='';
+  document.getElementById('ov-pay').classList.add('on');
+}
+async function savePay(){
+  const s=db.students.find(x=>x.id===ePayId); if(!s)return;
+  const date=document.getElementById('pay-d').value;
+  const amt=parseInt(document.getElementById('pay-a').value)||0;
+  const note=document.getElementById('pay-n').value.trim();
+  if(!date||!amt){ alert('請填日期和金額'); return; }
+  s.paymentLog=s.paymentLog||[];
+  s.paymentLog.unshift({date,amount:amt,note:note||''});
+  s.log=s.log||[];
+  s.log.unshift({date,note:`💳繳費 NT$${amt.toLocaleString()}${note?' ('+note+')':''}`,change:0,balance:s.hours});
+  await pushDB({students:db.students});
+  closeOv('ov-pay'); renderStudents();
+}
+
+// ═══ SALARY ═══
+function setPrd(p,el){
+  salPrd=p;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on')); el.classList.add('on');
+  renderSalary();
+}
+function pRange(p,ms){
+  if(p===1)return{s:ms+'-01',e:ms+'-15'};
+  if(p===2)return{s:ms+'-16',e:ms+'-31'};
+  return{s:ms+'-01',e:ms+'-31'};
+}
+function inR(d,s,e){ return String(d)>=s&&String(d)<=e; }
+function renderSalary(){
+  const ms=mstr(), {s,e}=pRange(salPrd,ms);
+  const lbl=salPrd===1?`${ms}-01～15`:salPrd===2?`${ms}-16～30`:`${ms}整月`;
+  const el=document.getElementById('salEl');
+  if(!db.teachers.length){ el.innerHTML='<div class="empty">尚無老師</div>'; return; }
+  el.innerHTML=db.teachers.map(t=>{
+    const cls=db.classes.filter(c=>String(c.teacherId)===t.id&&inR(c.date,s,e)&&c.status==='normal');
+    const lv=db.classes.filter(c=>String(c.teacherId)===t.id&&inR(c.date,s,e)&&c.status==='teacher-leave').length;
+    const base=cls.length*(t.rate||0);
+    const bk=`${t.id}-${ms}-${salPrd}`;
+    const bo=db.bonuses.find(b=>b.key===bk)||{};
+    const bonus=Number(bo.amount||0);
+    return `<div class="card" id="sc-${t.id}">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+        <div class="av" style="background:${t.color}22;color:${t.color};">${(t.name||'?')[0]}</div>
+        <div><div style="font-size:13px;font-weight:700;">${t.name}</div><div style="font-size:11px;color:var(--t2);">${lbl}</div></div>
+      </div>
+      <div class="sr"><span>正常上課</span><span>${cls.length} 堂</span></div>
+      <div class="sr"><span>每堂薪資</span><span>NT$${(t.rate||0).toLocaleString()}</span></div>
+      <div class="sr"><span>基本薪資</span><span>NT$${base.toLocaleString()}</span></div>
+      <div class="sr"><span>請假</span><span style="color:var(--r);">${lv} 堂</span></div>
+      <div class="stot" id="tot-${t.id}">NT$${(base+bonus).toLocaleString()}</div>
+      <div style="font-size:11px;color:var(--t2);margin-top:1px;">含獎金 NT$<span id="bshow-${t.id}">${bonus.toLocaleString()}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid var(--bd);">
+        <span style="font-size:11px;color:var(--y);white-space:nowrap;">🎁 獎金 NT$</span>
+        <input class="bonin" type="number" value="${bonus}" placeholder="0"
+          oninput="updBonus('${t.id}','${bk}',${base},this.value)">
+      </div>
+      <button class="btn ba bs" style="width:100%;margin-top:9px;" onclick="printSal('${t.id}','${lbl}')">🖨 列印薪資單</button>
+    </div>`;
+  }).join('');
+}
+async function updBonus(tid,bk,base,val){
+  const amount=parseInt(val)||0;
+  const idx=db.bonuses.findIndex(b=>b.key===bk);
+  if(idx>=0) db.bonuses[idx].amount=amount;
+  else db.bonuses.push({key:bk,teacherId:tid,amount});
+  saveDB(); // local only for live update
+  const totEl=document.getElementById('tot-'+tid);
+  const bshowEl=document.getElementById('bshow-'+tid);
+  if(totEl) totEl.textContent='NT$'+(base+amount).toLocaleString();
+  if(bshowEl) bshowEl.textContent=amount.toLocaleString();
+  // push to GAS in background
+  if(GAS) pushDB({bonuses:db.bonuses});
+}
+function printSal(tid,lbl){
+  const t=tbyid(tid); if(!t)return;
+  const ms=mstr(), {s,e}=pRange(salPrd,ms);
+  const cls=db.classes.filter(c=>String(c.teacherId)===tid&&inR(c.date,s,e)&&c.status==='normal').sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  const bk=`${tid}-${ms}-${salPrd}`;
+  const bo=db.bonuses.find(b=>b.key===bk)||{};
+  const bonus=Number(bo.amount||0);
+  const base=cls.length*(t.rate||0);
+  const total=base+bonus;
+  document.getElementById('pContent').innerHTML=`
+    <div style="font-size:22px;font-weight:700;margin-bottom:3px;">薪資單 · ${t.name}</div>
+    <div style="font-size:12px;color:#666;margin-bottom:18px;">期間：${lbl} · 製表：${tday()}</div>
+    <table class="ptbl"><thead><tr><th>日期</th><th>時間</th><th>學生</th><th>課時費</th></tr></thead>
+    <tbody>${cls.map(c=>`<tr><td>${c.date}</td><td>${c.time||''}</td><td>${c.students||''}</td><td>NT$${(t.rate||0).toLocaleString()}</td></tr>`).join('')}
+    ${!cls.length?'<tr><td colspan="4" style="text-align:center;color:#aaa;padding:12px;">本期無記錄</td></tr>':''}</tbody></table>
+    <div style="margin-top:13px;font-size:13px;">基本薪資 NT$${base.toLocaleString()}　獎金 NT$${bonus.toLocaleString()}</div>
+    <div style="font-size:20px;font-weight:700;color:#2563eb;margin-top:6px;">應付：NT$${total.toLocaleString()}</div>
+    <div style="margin-top:40px;display:flex;gap:80px;">
+      <div><div style="border-top:1px solid #333;padding-top:4px;width:110px;">主管簽名</div></div>
+      <div><div style="border-top:1px solid #333;padding-top:4px;width:110px;">老師簽名</div></div>
+    </div>`;
+  document.getElementById('prov').classList.add('on');
+}
+
+// ═══ PARENT ═══
+function fillParentSel(){
+  const sel=document.getElementById('parSel'); const cur=sel.value;
+  sel.innerHTML='<option value="">選擇學生…</option>';
+  db.students.forEach(s=>sel.innerHTML+=`<option value="${s.id}"${cur===s.id?' selected':''}>${s.name}</option>`);
+  if(cur) renderParent();
+}
+function renderParent(){
+  const id=document.getElementById('parSel').value;
+  const area=document.getElementById('parArea');
+  if(!id){ area.innerHTML=''; return; }
+  const s=db.students.find(x=>x.id===id); if(!s)return;
+  const tids=(s.teacherIds||[]);
+  const teachers=tids.map(id=>{ const t=tbyid(id); return t?t.name:'?'; }).join('、')||'未指定';
+  const h=Number(s.hours)||0, lo=h<=2;
+  const pays=(s.paymentLog||[]);
+  const log=(s.log||[]).slice(0,30);
+  const sched=(s.schedule||[]);
+  const now=new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
+  const schedHtml=sched.map(r=>{ const t=tbyid(r.teacherId); const tc=t?t.color:'#2563eb'; return `<span style="background:${tc}15;border:1px solid ${tc}44;color:${tc};border-radius:7px;padding:3px 9px;font-size:12px;font-weight:600;">${WD[r.weekday]||'?'} ${r.time} ${t?t.name:''}</span>`; }).join(' ');
+  area.innerHTML=`<div class="pcard" id="pviewCard">
+    <div class="phdr">
+      <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#0ea5e9);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:700;flex-shrink:0;">${(s.name||'?')[0]}</div>
+      <div><div style="font-size:17px;font-weight:700;">${s.name} 同學</div><div style="font-size:11px;color:#64748b;">老師：${teachers}　查詢：${now}</div></div>
+    </div>
+    ${sched.length?`<div style="margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:5px;">📅 固定上課時間</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${schedHtml}</div></div>`:''}
+    <div style="text-align:center;padding:16px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border-radius:11px;margin-bottom:12px;">
+      <div style="font-size:48px;font-weight:700;color:${lo?'#dc2626':'#2563eb'};line-height:1;">${h}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:3px;">剩餘課時（堂）</div>
+      <div style="margin-top:7px;height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${Math.min(h/10*100,100)}%;background:${lo?'#dc2626':'#2563eb'};border-radius:4px;"></div>
+      </div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:3px;">${h}/10 堂</div>
+    </div>
+    ${lo?`<div style="background:#fef9c3;border:1px solid #fde047;border-radius:7px;padding:9px 12px;font-size:12px;color:#854d0e;margin-bottom:11px;">⚠️ 課時即將用完！下次繳費：NT$${Number(s.fee||0).toLocaleString()}</div>`:''}
+    <div style="margin-bottom:11px;">
+      <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:5px;">💳 繳費紀錄</div>
+      ${pays.length?pays.map(p=>`<div class="pfr"><span>${p.date}${p.note?' · '+p.note:''}</span><span><span style="background:#dcfce7;color:#16a34a;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;">已繳</span> NT$${Number(p.amount).toLocaleString()}</span></div>`).join(''):'<div style="font-size:12px;color:#94a3b8;padding:5px 0;">尚無繳費紀錄</div>'}
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:5px;">📋 上課紀錄</div>
+      ${log.map(l=>`<div class="pfr"><span style="font-size:12px;">${l.date} ${l.note}</span><span style="font-size:12px;color:${l.change<0?'#dc2626':l.change===0?'#64748b':'#16a34a'};font-weight:600;">${l.change<0?l.change:l.change===0?'—':'+'+l.change} → ${l.balance}堂</span></div>`).join('')}
+      ${!log.length?'<div style="font-size:12px;color:#94a3b8;padding:5px 0;">尚無紀錄</div>':''}
+    </div>
+    <div style="margin-top:12px;padding-top:9px;border-top:1px solid #f1f5f9;font-size:10px;color:#94a3b8;text-align:center;">此頁由補習班提供 · 如有疑問請聯繫老師</div>
+  </div>`;
+}
+function printParent(){
+  const id=document.getElementById('parSel').value;
+  if(!id){ alert('請先選學生'); return; }
+  const card=document.getElementById('pviewCard');
+  if(!card){ renderParent(); setTimeout(printParent,300); return; }
+  document.getElementById('pContent').innerHTML=`<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans TC',sans-serif;background:#fff;}
+  .pcard{background:#fff;border-radius:13px;padding:20px;max-width:460px;margin:20px auto;color:#1e293b;}
+  .phdr{display:flex;align-items:center;gap:11px;margin-bottom:16px;padding-bottom:13px;border-bottom:2px solid #f1f5f9;}
+  .pfr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;}
+  .pfr:last-child{border-bottom:none;}
+  </style>`+card.outerHTML;
+  document.getElementById('prov').classList.add('on');
+}
+
+// ═══ SETUP ═══
+function saveGas(){
+  const url=document.getElementById('gasUrl').value.trim();
+  if(!url.includes('script.google.com')){ alert('網址格式不對，請確認是 Apps Script 部署網址'); return; }
+  GAS=url; localStorage.setItem('gasUrl',url);
+  document.getElementById('curUrl').textContent=url;
+  document.getElementById('gasRes').innerHTML='<span style="color:var(--y)">⏳ 測試中…</span>';
+  syncAll().then(()=>{
+    document.getElementById('gasRes').innerHTML='<span style="color:var(--g)">✅ 連線成功！資料已同步</span>';
+    if(syncTimer) clearInterval(syncTimer);
+    syncTimer=setInterval(syncAll,15000);
+  }).catch(err=>{
+    document.getElementById('gasRes').innerHTML=`<span style="color:var(--r)">❌ ${err.message}</span>`;
+  });
+}
+function cpGas(){ navigator.clipboard.writeText(document.getElementById('gasCode').textContent).then(()=>alert('已複製！')); }
+
+// ═══ INIT ═══
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('on'); }));
+
+// Load data from localStorage first
+loadDB();
+
+// Set up UI
+document.getElementById('gasUrl').value=GAS;
+document.getElementById('curUrl').textContent=GAS||'（未設定，使用本機儲存）';
+document.getElementById('ntplEl').value=getTpl();
+
+// Render
+updNavLbl();
+renderView();
+
+// 先顯示本機資料，完全不等 GAS
+dotSet('ok','本機資料已載入');
+renderView(); // 立刻渲染，不等任何網路
+
+// GAS 在背景靜默同步，失敗不影響畫面
+if(GAS){
+  // 延遲 2 秒再同步，讓畫面先穩定顯示
+  setTimeout(()=>{
+    syncAll();
+    syncTimer = setInterval(syncAll, 30000); // 每 30 秒同步一次（減少失敗機率）
+  }, 2000);
+}
+</script>
+</body>
+</html>
